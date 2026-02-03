@@ -1,16 +1,110 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
+# توکن بات شما
+TOKEN = "8515539607:AAFpCF9ORREAUtCAKfPBVNIJdVKA1toicZQ"
+
+# ---------- /start ----------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("سلام 👋 بات با موفقیت روشن شد")
+    keyboard = [
+        ["💎 خرید اشتراک الماس ماز"],
+        ["📚 ثبت‌نام آزمون کلاس ماز", "🚀 محصولات پنجم تا نهم"],
+        ["💸 کسب درآمد از ماز تهران"],
+        ["👤 پشتیبانی", "✉️ ارسال پیام ناشناس"],
+        ["📄 مصاحبه رتبه‌های برتر ۴۰۴"],
+        ["📌 درباره نمایندگی ماز تهران"]
+    ]
 
+    reply_markup = ReplyKeyboardMarkup(
+        keyboard,
+        resize_keyboard=True
+    )
+
+    text = (
+        "😍 سلام! به ربات ماز تهران خوش اومدی\n\n"
+        "هدف من کمک رسوندن به توعه،\n"
+        "چیکار می‌تونم برات انجام بدم عزیزم؟"
+    )
+
+    await update.message.reply_text(text, reply_markup=reply_markup)
+
+
+# ---------- پیام‌ها ----------
+async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = update.message.text
+
+    if msg == "💎 خرید اشتراک الماس ماز":
+        await update.message.reply_text(
+            "💎 اشتراک الماس ماز\n\n"
+            "✔️ دسترسی کامل به آموزش‌ها\n"
+            "✔️ پشتیبانی ویژه\n\n"
+            "📞 برای خرید با پشتیبانی در تماس باش"
+        )
+
+    elif msg == "📚 ثبت‌نام آزمون کلاس ماز":
+        await update.message.reply_text(
+            "📚 ثبت‌نام آزمون‌های ماز\n\n"
+            "لطفاً پایه تحصیلی خودت رو ارسال کن."
+        )
+
+    elif msg == "🚀 محصولات پنجم تا نهم":
+        await update.message.reply_text(
+            "🚀 محصولات آموزشی ماز تهران\n\n"
+            "پایه پنجم تا نهم\n"
+            "جزوه، آزمون، کلاس آنلاین"
+        )
+
+    elif msg == "💸 کسب درآمد از ماز تهران":
+        await update.message.reply_text(
+            "💸 همکاری در فروش و کسب درآمد\n\n"
+            "برای اطلاعات بیشتر با پشتیبانی تماس بگیر."
+        )
+
+    elif msg == "👤 پشتیبانی":
+        await update.message.reply_text(
+            "👤 پشتیبانی ماز تهران\n\n"
+            "🆔 @SupportID"
+        )
+
+    elif msg == "✉️ ارسال پیام ناشناس":
+        await update.message.reply_text(
+            "✉️ پیام خودت رو ارسال کن\n"
+            "پیام به صورت ناشناس به ادمین ارسال میشه."
+        )
+        context.user_data["anon"] = True
+
+    elif msg == "📄 مصاحبه رتبه‌های برتر ۴۰۴":
+        await update.message.reply_text(
+            "📄 مصاحبه رتبه‌های برتر ۴۰۴\n\n"
+            "به‌زودی داخل کانال قرار می‌گیره."
+        )
+
+    elif msg == "📌 درباره نمایندگی ماز تهران":
+        await update.message.reply_text(
+            "📌 نمایندگی رسمی ماز تهران\n\n"
+            "📍 آموزش تخصصی\n"
+            "📍 آزمون‌های استاندارد\n"
+            "📍 پشتیبانی قوی"
+        )
+
+    else:
+        # پیام ناشناس
+        if context.user_data.get("anon"):
+            # اینجا می‌تونی به ادمین فوروارد کنی
+            await update.message.reply_text("✅ پیام شما ارسال شد.")
+            context.user_data["anon"] = False
+        else:
+            await update.message.reply_text("❓ لطفاً از منو یکی از گزینه‌ها رو انتخاب کن.")
+
+
+# ---------- main ----------
 def main():
-    TOKEN = "8515539607:AAFpCF9ORREAUtCAKfPBVNIJdVKA1toicZQ"
+    app = Application.builder().token(TOKEN).build()
 
-    app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_messages))
 
-    print("🤖 Bot is running...")
+    print("Bot is running...")
     app.run_polling()
 
 if __name__ == "__main__":
