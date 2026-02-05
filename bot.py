@@ -1,111 +1,201 @@
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, CallbackQueryHandler, filters
 
-# توکن بات شما
+# ---------------- تنظیمات اصلی ----------------
 TOKEN = "8515539607:AAFpCF9ORREAUtCAKfPBVNIJdVKA1toicZQ"
+ADMIN_ID = 7312005758  # ← آیدی عددی شما
+CHANNEL_USERNAME = "@westcartel1"  # ← کانالی که حتماً عضو باشن
+SUPPORT_USERNAME = "@Eiejduxj"  # ← آیدی پشتیبانی
+
+# ---------- ذخیره کاربران ----------
+def save_user(user_id):
+    with open("users.txt", "a+") as f:
+        f.seek(0)
+        users = f.read().splitlines()
+        if str(user_id) not in users:
+            f.write(str(user_id) + "\n")
+
+# ---------- بررسی عضویت در کانال ----------
+async def is_member(bot, user_id):
+    try:
+        member = await bot.get_chat_member(CHANNEL_USERNAME, user_id)
+        return member.status in ["member", "administrator", "creator"]
+    except:
+        return False
 
 # ---------- /start ----------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+
+    if not await is_member(context.bot, user.id):
+        await update.message.reply_text(
+            "❌ برای استفاده از ربات باید عضو کانال ما باشی\n\n"
+            f"🔗 {CHANNEL_USERNAME}\n\n"
+            "بعد از عضویت دوباره /start رو بزن"
+        )
+        return
+
+    save_user(user.id)
+
+    # اطلاع به ادمین
+    await context.bot.send_message(
+        chat_id=ADMIN_ID,
+        text=(
+            "🚀 کاربر جدید ربات رو استارت کرد\n\n"
+            f"👤 نام: {user.full_name}\n"
+            f"🆔 ID: {user.id}\n"
+            f"🔗 Username: @{user.username}"
+        )
+    )
+
+    # منو کاربر
     keyboard = [
-        ["💎 خرید اشتراک و WEST"],
-        ["📚 ثبت‌نام آزمون کلاس ", "🚀 محصولات پنجم تا نهم"],
-        ["💸 کسب درآمد "],
+        ["💎 خرید اشتراک الماس West"],
+        ["📚 ثبت‌نام آزمون کلاس West", "🚀 محصولات پنجم تا نهم"],
+        ["💸 کسب درآمد از West"],
         ["👤 پشتیبانی", "✉️ ارسال پیام ناشناس"],
-        ["📄 نتایج رتبه های برتر کنکور"],
-        ["📌 درباره نمایندگی ما در تهران"]
+        ["📄 مصاحبه رتبه‌های برتر ۴۰۴"],
+        ["📌 درباره نمایندگی West"]
     ]
 
-    reply_markup = ReplyKeyboardMarkup(
-        keyboard,
-        resize_keyboard=True
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text(
+        "😍 سلام! به ربات West خوش اومدی\n\n"
+        "از منوی زیر انتخاب کن 👇",
+        reply_markup=reply_markup
     )
-
-    text = (
-        "😍 سلام! به ربات دانش اموزی وست خوش اومدی\n\n"
-        "هدف من کمک رسوندن به توعه،\n"
-        "چیکار می‌تونم برات انجام بدم عزیزم؟"
-    )
-
-    await update.message.reply_text(text, reply_markup=reply_markup)
-
 
 # ---------- پیام‌ها ----------
 async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message.text
 
-    if msg == "💎 خرید اشتراک WEST":
-        await update.message.reply_text(
-            "💎 اشتراک الماس WEST\n\n"
-            "✔️ دسترسی کامل به آموزش‌ها\n"
-            "✔️ پشتیبانی ویژه\n\n"
-            "📞 برای خرید با پشتیبانی در تماس باش"
-        )
-
-    elif msg == "📚 ثبت‌نام آزمون کلاس ما  ":
-        await update.message.reply_text(
-            "📚 ثبت‌نام آزمون‌های وست\n\n"
-            "لطفاً پایه تحصیلی خودت رو ارسال کن."
-        )
-
-    elif msg == "🚀 محصولات پنجم تا نهم":
-        await update.message.reply_text(
-            "🚀 محصولات آموزشی وست \n\n"
-            "پایه پنجم تا نهم\n"
-            "جزوه، آزمون، کلاس آنلاین"
-        )
-
-    elif msg == "💸 کسب درآمد ":
-        await update.message.reply_text(
-            "💸 همکاری در فروش و کسب درآمد\n\n"
-            "برای اطلاعات بیشتر با پشتیبانی تماس بگیر."
-        )
+    if msg == "💎 خرید اشتراک الماس West":
+        await update.message.reply_text("💎 برای خرید اشتراک با پشتیبانی تماس بگیر")
 
     elif msg == "👤 پشتیبانی":
-        await update.message.reply_text(
-            "👤 پشتیبانی WEST تهران\n\n"
-            "🆔 @SupportID"
-        )
+        await update.message.reply_text(f"🆔 {SUPPORT_USERNAME}")
 
-    elif msg == "✉️ ارسال پیام ناشناس":
-        await update.message.reply_text(
-            "✉️ پیام خودت رو ارسال کن\n"
-            "پیام به صورت ناشناس به ادمین ارسال میشه."
-        )
-        context.user_data["anon"] = True
-
-    elif msg == "📄نتایج رتبه های برتر کنکور ":
-        await update.message.reply_text(
-            "📄 نتایج رتبه های برتر کنکور۴\n\n"
-            "به‌زودی داخل کانال قرار می‌گیره."
-        )
-
-    elif msg == "📌 درباره نمایندگی ما تهران":
-        await update.message.reply_text(
-            "📌 نمایندگی رسمی ما تهران\n\n"
-            "📍 آموزش تخصصی\n"
-            "📍 آزمون‌های استاندارد\n"
-            "📍 پشتیبانی قوی"
-        )
+    # پنل ادمین همیشه در دسترس
+    elif update.effective_user.id == ADMIN_ID:
+        await send_admin_panel(update, context)
 
     else:
-        # پیام ناشناس
-        if context.user_data.get("anon"):
-            # اینجا می‌تونی به ادمین فوروارد کنی
-            await update.message.reply_text("✅ پیام شما ارسال شد.")
-            context.user_data["anon"] = False
-        else:
-            await update.message.reply_text("❓ لطفاً از منو یکی از گزینه‌ها رو انتخاب کن.")
+        await update.message.reply_text("❓ لطفاً از منو انتخاب کن")
 
+# ---------- پنل حرفه‌ای ادمین ----------
+async def send_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("👥 مشاهده کاربران", callback_data="view_users")],
+        [InlineKeyboardButton("📊 آمار کاربران", callback_data="stats_users")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("🎛 پنل ادمین:", reply_markup=reply_markup)
+
+# ---------- پاسخ دکمه‌های پنل ----------
+async def admin_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.from_user.id != ADMIN_ID:
+        await query.edit_message_text("❌ شما اجازه دسترسی ندارید")
+        return
+
+    if query.data == "view_users":
+        await users_list(update, context)
+    elif query.data == "stats_users":
+        await stats(update, context)
+
+# ---------- پیام همگانی ----------
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+    if not context.args:
+        await update.message.reply_text("❗ متن پیام رو بنویس")
+        return
+
+    text = " ".join(context.args)
+    with open("users.txt", "r") as f:
+        users = f.read().splitlines()
+    sent = 0
+    for user_id in users:
+        try:
+            await context.bot.send_message(chat_id=int(user_id), text=text)
+            sent += 1
+        except:
+            pass
+
+    await update.message.reply_text(f"✅ پیام برای {sent} نفر ارسال شد")
+
+# ---------- مشاهده لیست آیدی کاربران ----------
+async def users_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        with open("users.txt", "r") as f:
+            users = f.read().splitlines()
+
+        if not users:
+            await update.message.reply_text("❌ هنوز کاربری ثبت نشده")
+            return
+
+        text = "👥 لیست کاربران ربات:\n\n"
+        for uid in users:
+            text += f"🆔 {uid}\n"
+
+        await update.message.reply_text(text)
+
+    except FileNotFoundError:
+        await update.message.reply_text("❌ فایل کاربران وجود ندارد")
+
+# ---------- آمار تعداد کاربران ----------
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        with open("users.txt", "r") as f:
+            users = f.read().splitlines()
+
+        total = len(users)
+        await update.message.reply_text(
+            f"📊 آمار ربات:\n\n"
+            f"👥 تعداد کل کاربران: {total}"
+        )
+
+    except FileNotFoundError:
+        await update.message.reply_text("❌ هنوز کاربری ثبت نشده")
+
+# ---------- ارسال پیام به کاربر خاص ----------
+async def message_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text("❗ دستور صحیح: /message user_id متن پیام")
+        return
+
+    user_id = int(context.args[0])
+    text = " ".join(context.args[1:])
+
+    try:
+        await context.bot.send_message(chat_id=user_id, text=text)
+        await update.message.reply_text("✅ پیام ارسال شد")
+    except:
+        await update.message.reply_text("❌ ارسال پیام موفق نبود")
 
 # ---------- main ----------
 def main():
     app = Application.builder().token(TOKEN).build()
 
+    # دستورات اصلی
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("broadcast", broadcast))
+    app.add_handler(CommandHandler("users", users_list))
+    app.add_handler(CommandHandler("stats", stats))
+    app.add_handler(CommandHandler("message", message_user))
+
+    # دکمه‌های پنل ادمین
+    app.add_handler(CallbackQueryHandler(admin_button))
+
+    # پیام‌های متنی عادی
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_messages))
 
-    print("Bot is running...")
     app.run_polling()
+
 
 if __name__ == "__main__":
     main()
